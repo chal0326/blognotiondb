@@ -1,0 +1,31 @@
+---
+import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
+import NotionBlock from '../../components/NotionBlock.astro';
+import ErrorBoundary from '../../components/ErrorBoundary.astro';
+import { getPost } from '../../lib/notion';
+import { NotionError } from '../../lib/notion';
+
+const { slug } = Astro.params;
+let post = null;
+let error = null;
+
+try {
+  post = await getPost(slug);
+  if (!post) {
+    return Astro.redirect('/404');
+  }
+} catch (e) {
+  error = e instanceof NotionError ? e : new NotionError('Failed to load blog post');
+  console.error(`Error loading post ${slug}:`, e);
+}
+---
+
+{error ? (
+  <BlogPostLayout post={{ title: 'Error', publishedDate: '', excerpt: '', slug: '', id: '' }}>
+    <ErrorBoundary error={error} />
+  </BlogPostLayout>
+) : (
+  <BlogPostLayout post={post}>
+    {post.content.map((block) => <NotionBlock block={block} />)}
+  </BlogPostLayout>
+)}

@@ -1,0 +1,77 @@
+---
+import type { NotionBlock, RichText } from '../types/notion';
+
+interface Props {
+  block: NotionBlock;
+}
+
+const { block } = Astro.props;
+
+function renderRichText(richText: RichText[]) {
+  return richText.map((text) => {
+    let content = text.text?.content || text.plain_text;
+    
+    if (text.annotations?.bold) content = `<strong>${content}</strong>`;
+    if (text.annotations?.italic) content = `<em>${content}</em>`;
+    if (text.annotations?.strikethrough) content = `<del>${content}</del>`;
+    if (text.annotations?.underline) content = `<u>${content}</u>`;
+    if (text.annotations?.code) content = `<code>${content}</code>`;
+    
+    if (text.text?.link) {
+      content = `<a href="${text.text.link.url}" class="text-purple-600 hover:text-purple-800">${content}</a>`;
+    }
+    
+    return content;
+  }).join('');
+}
+
+function getBlockContent(block: NotionBlock) {
+  switch (block.type) {
+    case 'paragraph':
+      return block.paragraph?.rich_text ? renderRichText(block.paragraph.rich_text) : '';
+    case 'heading_1':
+      return block.heading_1?.rich_text ? renderRichText(block.heading_1.rich_text) : '';
+    case 'heading_2':
+      return block.heading_2?.rich_text ? renderRichText(block.heading_2.rich_text) : '';
+    case 'heading_3':
+      return block.heading_3?.rich_text ? renderRichText(block.heading_3.rich_text) : '';
+    case 'bulleted_list_item':
+      return block.bulleted_list_item?.rich_text ? renderRichText(block.bulleted_list_item.rich_text) : '';
+    case 'numbered_list_item':
+      return block.numbered_list_item?.rich_text ? renderRichText(block.numbered_list_item.rich_text) : '';
+    case 'quote':
+      return block.quote?.rich_text ? renderRichText(block.quote.rich_text) : '';
+    default:
+      return '';
+  }
+}
+
+const content = getBlockContent(block);
+---
+
+{block.type === 'paragraph' && <p class="mb-4" set:html={content} />}
+{block.type === 'heading_1' && <h1 class="text-3xl font-bold mb-4" set:html={content} />}
+{block.type === 'heading_2' && <h2 class="text-2xl font-bold mb-3" set:html={content} />}
+{block.type === 'heading_3' && <h3 class="text-xl font-bold mb-2" set:html={content} />}
+{block.type === 'bulleted_list_item' && <ul class="list-disc list-inside mb-4"><li set:html={content} /></ul>}
+{block.type === 'numbered_list_item' && <ol class="list-decimal list-inside mb-4"><li set:html={content} /></ol>}
+{block.type === 'quote' && <blockquote class="border-l-4 border-purple-500 pl-4 italic mb-4" set:html={content} />}
+{block.type === 'code' && (
+  <pre class="bg-gray-800 text-white p-4 rounded-lg mb-4 overflow-x-auto">
+    <code set:html={block.code?.rich_text[0]?.plain_text || ''} />
+  </pre>
+)}
+{block.type === 'image' && (
+  <figure class="mb-4">
+    <img
+      src={block.image?.type === 'external' ? block.image.external?.url : block.image?.file?.url}
+      alt={block.image?.caption?.[0]?.plain_text || ''}
+      class="rounded-lg shadow-lg"
+    />
+    {block.image?.caption && (
+      <figcaption class="text-center text-gray-600 mt-2">
+        {block.image.caption[0]?.plain_text}
+      </figcaption>
+    )}
+  </figure>
+)}

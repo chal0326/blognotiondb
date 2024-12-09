@@ -1,0 +1,23 @@
+---
+import { getPosts } from '../lib/notion';
+const posts = await getPosts();
+const recentPosts = posts.slice(0, 5);
+---
+
+<aside class="w-full lg:w-64 px-4 py-6" aria-label="Sidebar">
+  <div class="sticky top-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Posts</h2>
+    <ul class="space-y-4">
+      {recentPosts.map((post) => (
+        <li>
+          <a
+            href={`/posts/${post.slug}`}
+            class="text-sm text-gray-600 hover:text-purple-600"
+          >
+            {post.title}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</aside>
